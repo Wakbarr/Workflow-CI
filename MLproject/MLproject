@@ -1,0 +1,7 @@
+name: Palmer_Penguins_Classification
+
+entry_points:
+  main:
+    command: "python modelling.py"
+
+conda_env: conda.yaml

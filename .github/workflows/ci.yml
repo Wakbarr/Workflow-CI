@@ -1,0 +1,68 @@
+name: ML Model Training CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  train-model:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+    
+    - name: Install Miniconda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        auto-update-conda: true
+        python-version: 3.9
+        activate-environment: penguins_classification
+    
+    - name: Install MLflow
+      shell: bash -l {0}
+      run: |
+        conda activate penguins_classification
+        pip install mlflow
+    
+    - name: Verify installation
+      shell: bash -l {0}
+      run: |
+        conda activate penguins_classification
+        mlflow --version
+        python --version
+    
+    - name: Run MLflow Project
+      shell: bash -l {0}
+      run: |
+        conda activate penguins_classification
+        cd MLproject
+        mlflow run . --experiment-name "Palmer_Penguins_Classification_CI"
+    
+    - name: List generated artifacts
+      shell: bash -l {0}
+      run: |
+        echo "Generated files:"
+        find MLproject/ -name "*.pkl" -o -name "*.joblib" -o -name "mlruns" | head -20
+    
+    - name: Show MLflow runs
+      shell: bash -l {0}
+      run: |
+        cd MLproject
+        echo "MLflow runs:"
+        ls -la mlruns/ 2>/dev/null || echo "No mlruns directory found"
+    
+    - name: Upload MLflow artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: mlflow-artifacts
+        path: MLproject/mlruns/
+        retention-days: 30
